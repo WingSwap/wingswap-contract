@@ -3,8 +3,6 @@
 pragma solidity 0.6.12;
 
 interface IStake {
-  // BEAN specific functions
+  // Stake specific functions
   function safeWingTransfer(address _account, uint256 _amount) external;
-  function mint(address _to, uint256 _amount) external;
-  function burn(address _from, uint256 _amount) external;
 }

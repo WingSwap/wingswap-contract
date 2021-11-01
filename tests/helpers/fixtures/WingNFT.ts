@@ -17,6 +17,7 @@ import {
 import { ethers, upgrades } from "hardhat";
 import { smoddit, ModifiableContract } from "@eth-optimism/smock";
 import { BigNumber, constants } from "ethers";
+import { zeroAddress } from "ethereumjs-util";
 
 export interface IWingNFTUnitTestFixtureDTO {
   wingNFT: WingNFT;
@@ -51,6 +52,7 @@ export async function wingNFTUnitTestFixture(): Promise<IWingNFTUnitTestFixtureD
     wingToken.address,
     stake.address,
     await dev.getAddress(),
+    zeroAddress(),
     WING_PER_BLOCK,
     WING_START_BLOCK
   );

@@ -12,6 +12,7 @@ import "./interfaces/IWING.sol";
 import "./interfaces/IStake.sol";
 import "./interfaces/IMasterChef.sol";
 import "./interfaces/IMasterChefCallback.sol";
+import "./interfaces/IReferral.sol";
 
 // MasterChef is the master of WING. He can make WING and he is a fair guy.
 //
@@ -42,10 +43,14 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
 
   // WING token.
   IWING public wing;
-  // BEAN token.
-  IStake public bean;
+  // Stake address.
+  IStake public stake;
   // Dev address.
   address public override devAddr;
+  uint256 public devBps;
+  // Refferal address.
+  address public override refAddr;
+  uint256 public refBps;
   // WING per block.
   uint256 public wingPerBlock;
   // Bonus muliplier for early users.
@@ -76,8 +81,9 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
 
   function initialize(
     IWING _wing,
-    IStake _bean,
+    IStake _stake,
     address _devAddr,
+    address _refAddr,
     uint256 _wingPerBlock,
     uint256 _startBlock
   ) external initializer {
@@ -86,11 +92,14 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
 
     bonusMultiplier = 1;
     wing = _wing;
-    bean = _bean;
+    stake = _stake;
     devAddr = _devAddr;
+    refAddr = _refAddr;
     wingPerBlock = _wingPerBlock;
     lockUpBps = 0;
     startBlock = _startBlock;
+    devBps = 0;
+    refBps = 0;
     pools.init();
 
     // add WING pool
@@ -139,10 +148,12 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
     list.remove(_caller, list.getPreviousOf(_caller));
   }
 
-  // Update dev address by the previous dev.
-  function setDev(address _devAddr) external {
-    require(_msgSender() == devAddr, "setDev: only prev dev can changed dev address");
+  function setDevAddress(address _devAddr) external onlyOwner {
     devAddr = _devAddr;
+  }
+
+  function setRefAddress(address _refAddr) external onlyOwner {
+    refAddr = _refAddr;
   }
 
   // Set WING per block.
@@ -151,8 +162,20 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
     wingPerBlock = _wingPerBlock;
   }
 
+  function setDevBps(uint256 _devBps) external onlyOwner {
+    require(_devBps <= 10000, "setDevBps::bad devBps");
+    massUpdatePools();
+    devBps = _devBps;
+  }
+
+  function setRefBps(uint256 _refBps) external onlyOwner {
+    require(_refBps <= 10000, "setRefBps::bad refBps");
+    massUpdatePools();
+    refBps = _refBps;
+  }
+
   function setLockUpBps(uint256 _lockUpBps) external onlyOwner {
-    require(_lockUpBps <= 10000, "MasterBarista::setLockUpBps::bad lockUpBps");
+    require(_lockUpBps <= 10000, "setLockUpBps::bad lockUpBps");
     massUpdatePools();
     lockUpBps = _lockUpBps;
   }
@@ -258,8 +281,9 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
     }
     uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
     uint256 wingReward = multiplier.mul(wingPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-    wing.mint(devAddr, wingReward.div(10));
-    wing.mint(address(bean), wingReward);
+    wing.mint(devAddr, wingReward.mul(devBps).div(10000));
+    wing.mint(address(stake), wingReward.mul(refBps).div(10000));
+    wing.mint(address(stake), wingReward);
     pool.accWingPerShare = pool.accWingPerShare.add(wingReward.mul(1e12).div(totalStakeToken));
     pool.lastRewardBlock = block.number;
   }
@@ -398,12 +422,24 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
     require(user.fundedBy == _msgSender(), "_harvest: only funder");
     require(user.amount > 0, "_harvest: nothing to harvest");
     uint256 pending = user.amount.mul(pool.accWingPerShare).div(1e12).sub(user.rewardDebt);
-    require(pending <= wing.balanceOf(address(bean)), "_harvest: wait what.. not enough WING");
-    bean.safeWingTransfer(_for, pending);
+    require(pending <= wing.balanceOf(address(stake)), "_harvest: wait what.. not enough WING");
+    stake.safeWingTransfer(_for, pending);
     if (stakeTokenCallerContracts[_stakeToken].has(_msgSender())) {
       _masterChefCallee(_msgSender(), _stakeToken, _for, pending);
     }
+    _referralCallee(_for, pending);
     wing.lock(_for, pending.mul(lockUpBps).div(10000));
+  }
+
+  function _referralCallee(address _for, uint256 _pending) internal {
+    if (!refAddr.isContract()) {
+      return;
+    }
+    stake.safeWingTransfer(_for, _pending.mul(refBps).div(10000));
+    (bool success, ) = refAddr.call(
+      abi.encodeWithSelector(IReferral.updateReferralReward.selector, _for, _pending.mul(refBps).div(10000))
+    );
+    require(success, "_referralCallee:  failed to execute updateReferralReward");
   }
 
   // Observer function for those contract implementing onBeforeLock, execute an onBeforelock statement
@@ -443,7 +479,5 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
   ) external override onlyStakeTokenCallerContract(_stakeToken) {
     wing.mint(_to, _amount);
     wing.lock(_to, _amount.mul(lockUpBps).div(10000));
-    wing.mint(devAddr, _amount.div(10));
-    wing.lock(devAddr, _amount.mul(lockUpBps).div(10000).div(10));
   }
 }

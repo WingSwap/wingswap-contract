@@ -1,4 +1,5 @@
 import { MockProvider } from "ethereum-waffle";
+import { zeroAddress } from "ethereumjs-util";
 import { BigNumber, providers, Wallet } from "ethers";
 import { ethers, upgrades } from "hardhat";
 import {
@@ -62,6 +63,7 @@ export async function masterChefUnitTestFixture(
     wingToken.address,
     stake.address,
     await dev.getAddress(),
+    zeroAddress(),
     WING_PER_BLOCK,
     WING_START_BLOCK,
   ])) as MasterChef;
@@ -129,6 +131,7 @@ export async function masterChefE2ETestFixture(
     wingToken.address,
     stake.address,
     await dev.getAddress(),
+    zeroAddress(),
     WING_PER_BLOCK,
     WING_START_BLOCK,
   ])) as MasterChef;

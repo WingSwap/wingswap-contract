@@ -19,6 +19,7 @@ import {
   WingSwapNFT,
 } from "../../../typechain";
 import { ModifiableContract, smoddit } from "@eth-optimism/smock";
+import { zeroAddress } from "ethereumjs-util";
 
 export interface IShipBoosterUnitTestFixtureDTO {
   WING_START_BLOCK: number;
@@ -64,6 +65,7 @@ export async function shipboosterUnitTestFixture(
     wingToken.address,
     stake.address,
     await dev.getAddress(),
+    zeroAddress(),
     WING_PER_BLOCK,
     WING_START_BLOCK
   );
