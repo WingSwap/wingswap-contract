@@ -25,6 +25,7 @@ contract OGOwnerToken is IWingOwnerToken, ERC20Upgradeable, OwnableUpgradeable {
     string calldata _symbol,
     address _timelock
   ) external initializer {
+    require(_timelock != address(0), "WingOwnerToken::initialize:: _timelock cannot be address(0)");
     OwnableUpgradeable.__Ownable_init();
     ERC20Upgradeable.__ERC20_init(_name, _symbol);
     timelock = _timelock;

@@ -90,8 +90,11 @@ contract WingNFTOffering is ERC721HolderUpgradeable, OwnableUpgradeable, Pausabl
     _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
     _setupRole(GOVERNANCE_ROLE, _msgSender());
 
-    require(_wingNFT != address(0), "WingNFTOffering::initialize:: og nft cannot be address(0)");
+    require(_wingNFT != address(0), "WingNFTOffering::initialize:: wings nft cannot be address(0)");
+    require(_feeAddr != address(0), "WingNFTOffering::initialize:: feeAddress cannot be address(0)");
+    require(_wNative != address(0), "WingNFTOffering::initialize:: _wNative cannot be address(0)");
     require(address(_priceModel) != address(0), "WingNFTOffering::initialize:: price model cannot be address(0)");
+    require(address(_wNativeRelayer) != address(0), "WingNFTOffering::initialize:: _wNativeRelayer cannot be address(0)");
 
     wingNFT = _wingNFT;
     priceModel = _priceModel;
@@ -217,7 +220,10 @@ contract WingNFTOffering is ERC721HolderUpgradeable, OwnableUpgradeable, Pausabl
     uint256 price = priceModel.getPrice(metadata.maxCap, metadata.cap, _categoryId);
     uint256 feeAmount = price.mul(feePercentBps).div(1e4);
     _updateBuyLimit(_categoryId, _to);
-    require(buyLimitMetadata[_to][_categoryId].counter <= buyLimitCount, "WingNFTOffering::_buyNFTTo::exceed buy limit");
+    require(
+      buyLimitMetadata[_to][_categoryId].counter <= buyLimitCount,
+      "WingNFTOffering::_buyNFTTo::exceed buy limit"
+    );
     _safeWrap(metadata.quoteBep20, price);
     if (feeAmount != 0) {
       metadata.quoteBep20.safeTransfer(feeAddr, feeAmount);
@@ -299,6 +305,7 @@ contract WingNFTOffering is ERC721HolderUpgradeable, OwnableUpgradeable, Pausabl
 
   /// @dev set a new feeAddress
   function setTransferFeeAddress(address _feeAddr) external onlyOwner {
+    require(_wingNFT != address(0), "WingNFTOffering::initialize:: wings nft cannot be address(0)");
     feeAddr = _feeAddr;
     emit FeeAddressTransferred(_msgSender(), feeAddr);
   }

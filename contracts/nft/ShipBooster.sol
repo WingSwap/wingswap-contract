@@ -85,6 +85,12 @@ contract ShipBooster is
     IWNativeRelayer _wNativeRelayer,
     address _wNative
   ) external initializer {
+    require(_wNative != address(0), "ShipBooster::initialize:: _wNative cannot be address(0)");
+    require(address(_wing) != address(0), "WingNFTOffering::initialize:: _wing cannot be address(0)");
+    require(address(_masterChef) != address(0), "WingNFTOffering::initialize:: _masterChef cannot be address(0)");
+    require(address(_shipboosterConfig) != address(0), "WingNFTOffering::initialize:: _shipboosterConfig cannot be address(0)");
+    require(address(_wNativeRelayer) != address(0), "WingNFTOffering::initialize:: _wNativeRelayer cannot be address(0)");
+
     OwnableUpgradeable.__Ownable_init();
     ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
     PausableUpgradeable.__Pausable_init();
@@ -163,6 +169,23 @@ contract ShipBooster is
   function unpause() external onlyGovernance whenPaused {
     _unpause();
     emit Unpause();
+  }
+
+  /// @dev View function to see pending booster WINGs on frontend.
+  function pendingBoosterWing(address _stakeToken, address _user) external view returns (uint256) {
+    uint256 pendingWing = masterChef.pendingWing(_stakeToken, _user);
+    NFTStakingInfo memory stakingNFT = userStakingNFT[_stakeToken][_user];
+    if (stakingNFT.nftAddress == address(0)) {
+      return 0;
+    }
+    (, uint256 currentEnergy, uint256 boostBps) = shipboosterConfig.energyInfo(
+      stakingNFT.nftAddress,
+      stakingNFT.nftTokenId
+    );
+    if (currentEnergy == 0) {
+      return 0;
+    }
+    return MathUpgradeable.min(currentEnergy, pendingWing.mul(boostBps).div(1e4));
   }
 
   /// @dev Internal function for withdrawing a boosted stake token and receive a reward from a master chef

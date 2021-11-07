@@ -96,6 +96,10 @@ contract WingMarket is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpgr
     IWNativeRelayer _wNativeRelayer,
     address _wNative
   ) external initializer {
+    require(_wNative != address(0), "WingMarket::initialize:: _wNative cannot be address(0)");
+    require(_feeAddr != address(0), "WingMarket::initialize:: _feeAddr cannot be address(0)");
+    require(address(_wNativeRelayer) != address(0), "WingMarket::initialize:: _wNativeRelayer cannot be address(0)");
+
     OwnableUpgradeable.__Ownable_init();
     PausableUpgradeable.__Pausable_init();
     ERC721HolderUpgradeable.__ERC721Holder_init();
@@ -478,6 +482,7 @@ contract WingMarket is ERC721HolderUpgradeable, OwnableUpgradeable, PausableUpgr
 
   /// @dev set a new feeAddress
   function setTransferFeeAddress(address _feeAddr) external onlyOwner {
+    require(_feeAddr != address(0), "WingMarket::initialize:: _feeAddr cannot be address(0)");
     feeAddr = _feeAddr;
     emit FeeAddressTransferred(_msgSender(), feeAddr);
   }

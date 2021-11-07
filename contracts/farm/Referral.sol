@@ -31,6 +31,7 @@ contract Referral is IReferral, OwnableUpgradeable, ReentrancyGuardUpgradeable {
   event Activate(address referee, address referrer);
   event ClaimReward(address accountAddress, uint256 reward);
   event UpdateReferralReward(address referee, address referrer, uint256 reward);
+  event UpdateMasterChef(address masterChef);
 
   // MasterChef address.
   address public masterChef;
@@ -48,6 +49,14 @@ contract Referral is IReferral, OwnableUpgradeable, ReentrancyGuardUpgradeable {
   bytes32 public constant ACTIVATE_TYPEHASH = 0x4b1fc20d2fd2102f86b90df2c22a6641f5ef4f7fd96d33e36ab9bd6fbad1cf30;
 
   function initialize(address _tokenAddress, address _masterChef) external initializer {
+    require(
+      _tokenAddress != address(0) && _tokenAddress != address(1),
+      "Referral::initialize::_tokenAddress must not be address(0) or address(1)"
+    );
+    require(
+      _masterChef != address(0) && _masterChef != address(1),
+      "Referral::initialize::_masterChef must not be address(0) or address(1)"
+    );
     OwnableUpgradeable.__Ownable_init();
     ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
 
@@ -80,6 +89,7 @@ contract Referral is IReferral, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     require(_masterChef != address(0), "invalid _masterChef");
 
     masterChef = _masterChef;
+    emit UpdateMasterChef(_masterChef);
   }
 
   // Activates sender
