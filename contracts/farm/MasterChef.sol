@@ -163,7 +163,7 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
   }
 
   function setDevBps(uint256 _devBps) external onlyOwner {
-    require(_devBps <= 10000, "setDevBps::bad devBps");
+    require(_devBps <= 1000, "setDevBps::bad devBps");
     massUpdatePools();
     devBps = _devBps;
   }

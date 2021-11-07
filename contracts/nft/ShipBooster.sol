@@ -237,7 +237,7 @@ contract ShipBooster is
   /// @notice function for unstaking a current nft
   /// @dev This one is a preparation for nft staking info, if nft address and nft token id are the same with existing record, it will be reverted
   /// @param _stakeToken a specified stake token address
-  function unstakeNFT(address _stakeToken) external whenNotPaused isStakeTokenOK(_stakeToken) nonReentrant onlyEOA {
+  function unstakeNFT(address _stakeToken) external isStakeTokenOK(_stakeToken) nonReentrant onlyEOA {
     _unstakeNFT(_stakeToken);
   }
 
@@ -304,19 +304,14 @@ contract ShipBooster is
   /// @dev function for unstaking a stakeToken and receive some rewards
   /// @param _stakeToken a specified stake token to be unstaked
   /// @param _amount amount to stake
-  function unstake(address _stakeToken, uint256 _amount)
-    external
-    whenNotPaused
-    isStakeTokenOK(_stakeToken)
-    nonReentrant
-  {
+  function unstake(address _stakeToken, uint256 _amount) external isStakeTokenOK(_stakeToken) nonReentrant {
     _unstake(IERC20Upgradeable(_stakeToken), _amount);
   }
 
   /// @notice function for unstaking all portion of stakeToken and receive some rewards
   /// @dev similar to unstake with user's shares
   /// @param _stakeToken a specified stake token to be unstaked
-  function unstakeAll(address _stakeToken) external whenNotPaused isStakeTokenOK(_stakeToken) nonReentrant {
+  function unstakeAll(address _stakeToken) external isStakeTokenOK(_stakeToken) nonReentrant {
     (uint256 userStakeAmount, , ) = masterChef.userInfo(address(_stakeToken), _msgSender());
     _unstake(IERC20Upgradeable(_stakeToken), userStakeAmount);
   }
