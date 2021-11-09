@@ -305,7 +305,7 @@ contract WingNFTOffering is ERC721HolderUpgradeable, OwnableUpgradeable, Pausabl
 
   /// @dev set a new feeAddress
   function setTransferFeeAddress(address _feeAddr) external onlyOwner {
-    require(_wingNFT != address(0), "WingNFTOffering::initialize:: wings nft cannot be address(0)");
+    require(_feeAddr != address(0), "WingNFTOffering::initialize:: _feeAddr cannot be address(0)");
     feeAddr = _feeAddr;
     emit FeeAddressTransferred(_msgSender(), feeAddr);
   }

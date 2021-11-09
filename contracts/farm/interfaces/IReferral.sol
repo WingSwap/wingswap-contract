@@ -2,59 +2,14 @@
 
 pragma solidity 0.6.12;
 
-interface IMasterChef {
-  /// @dev functions return information. no states changed.
-  function poolLength() external view returns (uint256);
+interface IReferral {
+    function updateMasterChef(address _masterChef) external;
 
-  function pendingWing(address _stakeToken, address _user) external view returns (uint256);
+    function activate(address referrer) external;
+    function activateBySign(address referee, address referrer, uint8 v, bytes32 r, bytes32 s) external;
+    function isActivated(address _address) external view returns (bool);
 
-  function userInfo(address _stakeToken, address _user)
-    external
-    view
-    returns (
-      uint256,
-      uint256,
-      address
-    );
+    function updateReferralReward(address accountAddress, uint256 reward) external;
 
-  function devAddr() external view returns (address);
-  function refAddr() external view returns (address);
-
-  /// @dev configuration functions
-  function addPool(address _stakeToken, uint256 _allocPoint) external;
-
-  function setPool(address _stakeToken, uint256 _allocPoint) external;
-
-  function updatePool(address _stakeToken) external;
-
-  function removePool(address _stakeToken) external;
-
-  /// @dev user interaction functions
-  function deposit(
-    address _for,
-    address _stakeToken,
-    uint256 _amount
-  ) external;
-
-  function withdraw(
-    address _for,
-    address _stakeToken,
-    uint256 _amount
-  ) external;
-
-  function depositWing(address _for, uint256 _amount) external;
-
-  function withdrawWing(address _for, uint256 _amount) external;
-
-  function harvest(address _for, address _stakeToken) external;
-
-  function harvest(address _for, address[] calldata _stakeToken) external;
-
-  function emergencyWithdraw(address _for, address _stakeToken) external;
-
-  function mintExtraReward(
-    address _stakeToken,
-    address _to,
-    uint256 _amount
-  ) external;
+    function claimReward() external;
 }
