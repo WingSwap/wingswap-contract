@@ -79,6 +79,17 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
   event Withdraw(address indexed funder, address indexed fundee, address indexed stakeToken, uint256 amount);
   event EmergencyWithdraw(address indexed user, address indexed stakeToken, uint256 amount);
 
+  event SetStakeTokenCallerAllowancePool(address indexed stakeToken, bool isAllowed);
+  event AddStakeTokenCallerContract(address indexed stakeToken, address indexed caller);
+  event SetWingPerBlock(uint256 prevWingPerBlock, uint256 currentWingPerBlock);
+  event RemoveStakeTokenCallerContract(address indexed stakeToken, address indexed caller);
+  event SetRefAddress(address indexed refAddress);
+  event SetDevAddress(address indexed devAddress);
+  event SetDevBps(uint256 devBps);
+  event SetRefBps(uint256 refBps);
+  event SetLockUpBps(uint256 lockUpBps);
+  event UpdateMultiplier(uint256 bonusMultiplier);
+
   function initialize(
     IWING _wing,
     IStake _stake,
@@ -87,6 +98,14 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
     uint256 _wingPerBlock,
     uint256 _startBlock
   ) external initializer {
+    require(
+      _devAddr != address(0) && _devAddr != address(1),
+      "initializer: _devAddr must not be address(0) or address(1)"
+    );
+    require(
+      _refAddr != address(0) && _refAddr != address(1),
+      "initializer: _refAddr must not be address(0) or address(1)"
+    );
     OwnableUpgradeable.__Ownable_init();
     ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
 
@@ -123,6 +142,7 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
   // Set funder allowance for a stake token pool
   function setStakeTokenCallerAllowancePool(address _stakeToken, bool _isAllowed) external onlyOwner {
     stakeTokenCallerAllowancePool[_stakeToken] = _isAllowed;
+    emit SetStakeTokenCallerAllowancePool(_stakeToken, _isAllowed);
   }
 
   // Setter function for adding stake token contract caller
@@ -136,6 +156,7 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
       list.init();
     }
     list.add(_caller);
+    emit AddStakeTokenCallerContract(_stakeToken, _caller);
   }
 
   // Setter function for removing stake token contract caller
@@ -146,38 +167,54 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
     );
     LinkList.List storage list = stakeTokenCallerContracts[_stakeToken];
     list.remove(_caller, list.getPreviousOf(_caller));
+    emit RemoveStakeTokenCallerContract(_stakeToken, _caller);
   }
 
   function setDevAddress(address _devAddr) external onlyOwner {
+    require(
+      _devAddr != address(0) && _devAddr != address(1),
+      "setDevAddress: _devAddr must not be address(0) or address(1)"
+    );
     devAddr = _devAddr;
+    emit SetDevAddress(_devAddr);
   }
 
   function setRefAddress(address _refAddr) external onlyOwner {
+    require(
+      _refAddr != address(0) && _refAddr != address(1),
+      "setRefAddress: _refAddr must not be address(0) or address(1)"
+    );
     refAddr = _refAddr;
+    emit SetRefAddress(_refAddr);
   }
 
   // Set WING per block.
   function setWingPerBlock(uint256 _wingPerBlock) external onlyOwner {
     massUpdatePools();
+    uint256 prevWingPerBlock = wingPerBlock;
     wingPerBlock = _wingPerBlock;
+    emit SetWingPerBlock(prevWingPerBlock, wingPerBlock);
   }
 
   function setDevBps(uint256 _devBps) external onlyOwner {
     require(_devBps <= 1000, "setDevBps::bad devBps");
     massUpdatePools();
     devBps = _devBps;
+    emit SetDevBps(_devBps);
   }
 
   function setRefBps(uint256 _refBps) external onlyOwner {
     require(_refBps <= 10000, "setRefBps::bad refBps");
     massUpdatePools();
     refBps = _refBps;
+    emit SetRefBps(_refBps);
   }
 
   function setLockUpBps(uint256 _lockUpBps) external onlyOwner {
     require(_lockUpBps <= 10000, "setLockUpBps::bad lockUpBps");
     massUpdatePools();
     lockUpBps = _lockUpBps;
+    emit SetLockUpBps(_lockUpBps);
   }
 
   // Add a pool. Can only be called by the owner.
@@ -237,6 +274,7 @@ contract MasterChef is IMasterChef, OwnableUpgradeable, ReentrancyGuardUpgradeab
 
   function updateMultiplier(uint256 _bonusMultiplier) public onlyOwner {
     bonusMultiplier = _bonusMultiplier;
+    emit UpdateMultiplier(_bonusMultiplier);
   }
 
   // Validating if a msg sender is a funder
